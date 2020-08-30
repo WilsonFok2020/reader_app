@@ -7,26 +7,41 @@ class Window(tk.Tk):
         super().__init__()
         self.title('Hello Tkinter')
         
-        self.label = tk.Label(self, text='Choose One')
+        self.label_text = tk.StringVar()
+        self.label_text.set("my name is : ")
+        
+        # declare variables
+        self.label = tk.Label(self, textvar=self.label_text)
+        # show the variable python object name
+        # self.label = tk.Label(self, text=self.label_text)
         self.label.pack(fill = tk.BOTH, expand=1, padx=100, pady=30)
         
+        self.name_text = tk.StringVar()
+        self.name_entry = tk.Entry(self, textvar=self.name_text)
+        self.name_entry.pack(fill=tk.BOTH, expand=1, padx=20, pady=20)
+        
         hello_button = tk.Button(self, text='Say Hello',
-                                 command= self.say_hello)
+                                  command= self.say_hello)
         hello_button.pack(side=tk.LEFT, padx=(20,0), pady=(0,20))
         
         goodbye_button = tk.Button(self, text='Say goodbye',
-                                   command=self.say_goodbye)
+                                    command=self.say_goodbye)
         
         goodbye_button.pack(side=tk.RIGHT, padx=(0,20), pady=(0,20))
         
     def say_hello(self):
-        self.label.configure(text = 'Hello World')
+        # self.label.configure(text = 'Hello World')
+        message = "hello there" + self.name_entry.get()
+        msgbox.showinfo("hello", message)
     def say_goodbye(self):
         if msgbox.askyesno("close window?", "would you like to close this window?"):
-            self.label.configure(text = 'Goodbye ! \n (Closing in 2 seconds)')
+            # self.label.configure(text = 'Goodbye ! \n (Closing in 2 seconds)')
+            message = 'goodbye ' + self.name_entry.get()
+            self.label_text.set(message)
             self.after(2000, self.destroy)
         else:
-            self.label.configure(text = 'stay open')
+            # self.label.configure(text = 'stay open')
+            msgbox.showinfo('not closing', 'stay open')
             
         
         # # window's title bar, content
