@@ -121,8 +121,13 @@ class TextArea(tk.Text):
         with open(filepath, 'r') as file:
             
             # clear previous stuff if any
+            # text box starts from 1
             self.delete(1.0, tk.END)
             self.insert(1.0, file.read())
+            
+            # spinbox starts from 0
+            # self.delete(0, tk.END)
+            # self.insert(0, file.read())
             
             
 
