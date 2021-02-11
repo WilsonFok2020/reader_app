@@ -25,7 +25,25 @@ def crop(match, s, kmp):
     return s[start_ind:end_ind]
 
 
-def sieve_line(lines, kmp, name):
+def write_to_file(filtered, phrase_dir, filename, page_num, name):
+    
+    with open(os.path.join(phrase_dir, filename+ '_' + page_num + '_' +name+ '_'+'.txt'), 'w',
+               encoding='utf-8') as f:
+        for line in filtered:
+            try:
+                f.write(line)
+            except UnicodeEncodeError as e:
+                print (e)
+                print ('line = {}'.format(line))
+                raise ValueError
+                
+            
+            f.write('\n')
+            
+    
+
+
+def sieve_line(lines, kmp, filename, page_num, name):
     
     characters = [non_whitespace.findall(line) for line in lines]  
     
@@ -33,12 +51,8 @@ def sieve_line(lines, kmp, name):
     # note: daggling.. word fails
     filtered = [crop(match, line, kmp) for match, line in zip(characters, lines) if len(match) >= 1 ]
     
+    write_to_file(filtered, phrase_dir, filename, page_num, name)
     
-    with open(name+'.txt', 'w') as f:
-        for line in filtered:
-            f.write(line)
-            f.write('\n')
-            
     
     return filtered
 
@@ -138,7 +152,7 @@ def merge_short_sentences(stitched):
     return merged_lines
 
     
-def process(lines, lines2):
+def process(lines, lines2, phrase_dir, filename, page_num ):
     
     
     
@@ -149,8 +163,8 @@ def process(lines, lines2):
     lines2 = [line.replace('-', ' ') for line in lines2]
     
     # remove blank lines why, 1) no information, 2) no needed in audio 3) save time
-    lines = sieve_line(lines, kmp, name='lines') 
-    lines2 = sieve_line(lines2, kmp, name='lines2')
+    lines = sieve_line(lines, kmp, filename, page_num, name='lines') 
+    lines2 = sieve_line(lines2, kmp, filename, page_num,  name='lines2')
     
     
     
@@ -169,24 +183,25 @@ def process(lines, lines2):
             try:
                 status = line[i-1].isupper() or check_int(line[i-1])
             except IndexError as e:
-                print (e, line)
+                # print (e, line)
                 status = False
                 
             try:
                 status2 = line[i+1].isupper() or check_int(line[i+1])
             except IndexError as e:
-                print (e, line)
+                # print (e, line)
                 status2 = False
                 
             try:
                 status3 = line[i+3].islower()
             except IndexError as e:
-                print (e, line)
+                # print (e, line)
                 status3 = False
                 
             if status and (status2 or status3):
-                print ('abbreviation : ', line)
-                print (i)
+                pass
+                # print ('abbreviation : ', line)
+                # print (i)
             else:
                 no_abbre.append(i)
                 
@@ -200,13 +215,13 @@ def process(lines, lines2):
             no_abbre = [i+1 for i in no_abbre]
             no_abbre = [0] + no_abbre + [len(line)]
             
-            print (line, no_abbre)
+            # print (line, no_abbre)
             for start, end in zip(no_abbre[0:-1], no_abbre[1:]):
                 sublines.append(line[start:end])
                 
             new += sublines
             
-    new = sieve_line(new, kmp, name='break_by_fullstop')
+    new = sieve_line(new, kmp, filename, page_num, name='break_by_fullstop')
             
 
 
@@ -233,95 +248,98 @@ def process(lines, lines2):
 
 
 
-    with open('watermark.txt', 'w') as f:
+    with open(os.path.join(phrase_dir, filename+ '_' + page_num + '_' +'watermark.txt'), 'w',
+              encoding='utf-8') as f:
         
         previous_pattern = None
         for row in watermark:
             
             if previous_pattern != row.pattern:
-                # print ('pattern ', lines[row.pattern])
-                f.write('pattern {} : {} \n'.format(row.pattern, new[row.pattern]))
+                string = 'pattern {} : {} \n'.format(row.pattern, new[row.pattern])
+                try:
+                    f.write(string)
+                except UnicodeEncodeError as e:
+                    print (e)
+                    print (string)
                 
-                previous_pattern = row.pattern
+                finally:
+                    previous_pattern = row.pattern
                 
             # print ('template ', lines2[row.template])
-            f.write('template {} : {} \n'.format(row.template, lines2[row.template]))
+            string = 'template {} : {} \n'.format(row.template, lines2[row.template])
+            try:
+                f.write(string)
+            except UnicodeEncodeError as e:
+                    print (e)
+                    print (string)
+                
             
-    
-    phrase_dir = r'C:\Users\user\Documents\Nvidia\PyTorch\SpeechSynthesis\Tacotron2\phrases'
-    with open(os.path.join(phrase_dir, 'dry_lines.txt'), 'w', encoding='utf-8') as f:
-        for line in dry_lines:
-            f.write(line)
-            f.write('\n')
-            
+
+    write_to_file(dry_lines, phrase_dir, filename, page_num, 'dry_lines')
+   
             
     # almost right rule
     stitched = stitching(dry_lines)
     merged_lines = merge_short_sentences(stitched)
     
-                
-    with open(os.path.join(phrase_dir, 'concatenated_lines.txt'), 'w', encoding='utf-8') as f:
-        for line in merged_lines:
-            f.write(line)
-            f.write('\n')
+    write_to_file(merged_lines, phrase_dir, filename, page_num, 'concatenated_lines')
     
+ 
 
 
 if __name__ == "__main__":
     # check for non-white space
     non_whitespace = re.compile(r'\S+')
-    special_char = ['•', '“', '”','©', '(', ')']
-    input_dir = r'C:/Users/user/Documents/GitHub/My_other_repositories/reader_app/'
+    special_char = ['•', '“', '”','©', '(', ')', '*']
+    # input_dir = r'C:/Users/user/Documents/GitHub/My_other_repositories/reader_app/'
     kmp = KMP()
     Row = namedtuple('Row', ['pattern', 'template', 'location'])
     
 
-    
-    
-    
-    
-    # filename = 'the-anatomy-of-a-rally'
-    filename = '1990-10-12-the-route-to-performance'
-    pages = pickle.load(open(os.path.join(input_dir, filename + '.p'), 'rb'))
+    input_dir = r'C:/Users/user/Documents/GitHub/My_other_repositories/reader_app/memo'
 
-
-    lines = pages[1].split('\n')    
-    lines2 = pages[0].split('\n')
+    files = [(folder, file) for folder in os.listdir(input_dir) for file in os.listdir(os.path.join(input_dir, folder)) if file.endswith('.pdf')]
     
-    process(lines, lines2)
+    print ('len(files) ', len(files))
     
     
-    
-                
+    for folder, file in files:
+        
+        # if folder == '1994-04-11-risk-in-todays-markets-revisted':
+        
+        
+        
+        filename = file.split('.')[0]
+        print (filename)
+        phrase_dir = os.path.join(input_dir, folder)
+        
+        pages = pickle.load(open(os.path.join(input_dir, folder, filename + '.p'), 'rb'))
+        
+        N = len(pages)
+        
+        # skip the last page ? legal information
+        for i in range(N-1):
             
-    
+            if i == 0:
+                
+                lines = pages[i].split('\n')  # working on this  
+                lines2 = pages[i+1].split('\n') # template
+                
+            else:
+                lines = pages[i].split('\n')
+                lines2 = pages[0].split('\n')
+                
+                
         
-
-
-
-
-
-    
-
+            page_num = str(i)
+            process(lines, lines2, phrase_dir, filename, page_num)
+            
+            
+        print ('---------------------------------------')
+            
+        # break
         
-
-        
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ 
 
 
 
